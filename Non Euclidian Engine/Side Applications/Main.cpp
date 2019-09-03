@@ -2,8 +2,10 @@
 using namespace std;
 
 #define CURRENT_APP ColliderMaker
-#define PARAMS_AS ""
+#define PARAMS_AS "TestCrate.obj", ColliderMaker::ProcessingType::CUBE
 
+#include <sstream>
+#include <iostream>
 
 int main(void)
 {
