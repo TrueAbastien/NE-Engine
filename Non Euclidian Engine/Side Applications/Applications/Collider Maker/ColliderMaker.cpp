@@ -44,6 +44,10 @@ int ColliderMaker::Run()
 		// Create Faces
 		if (line.find("f ") == 0)
 		{
+			// Simple Space Verification
+			if (*line.rbegin() == ' ')
+				line.pop_back();
+
 			// Count Slashes & Spaces
 			int n_slash = 0, n_space = 0;
 			for (size_t ii = 1; ii < line.size(); ii++)
@@ -59,19 +63,6 @@ int ColliderMaker::Run()
 				}
 			}
 
-			// Append Vertex Indexes
-			std::stringstream ss(line.c_str() + 2);
-			std::vector<int> iBuf;
-			int tVal;
-			for (int aa = 0;; aa++)
-			{
-				ss >> tVal;
-				if (aa > 0)
-					if (tVal == iBuf[aa - 1])
-						break;
-				iBuf.push_back(tVal);
-			}
-
 			// Verify kCoeff Integrety
 			int kCoeff = n_slash / n_space;
 			switch (kCoeff)
@@ -84,6 +75,21 @@ int ColliderMaker::Run()
 				return 1;
 			}
 
+			// Append Vertex Indexes
+			std::stringstream ss(line.c_str() + 2);
+			std::vector<int> iBuf;
+			int tVal;
+			for (int aa = 0;; aa++)
+			{
+				ss >> tVal;
+				if (aa > kCoeff)
+					if (tVal == iBuf[iBuf.size() - 1])
+						break;
+				if (aa % (kCoeff + 1) == 0)
+					iBuf.push_back(tVal);
+			}
+			iBuf.pop_back();
+
 			// Create Face
 			std::vector<Point3D> pts;
 			for (size_t jj = 0; jj < iBuf.size(); jj++)
@@ -91,7 +97,6 @@ int ColliderMaker::Run()
 				if (iBuf[jj] > PointBuffer.size() || iBuf[jj] < 1)
 					return 1;
 				pts.push_back(PointBuffer[iBuf[jj] - 1]);
-				jj += kCoeff;
 			}
 			FaceInstance.pts = pts;
 			FaceBuffer.push_back(FaceInstance);
@@ -108,8 +113,8 @@ int ColliderMaker::Run()
 
 	
 	// Apply Collisions Methods // ----------
-	std::vector<int> IndexesBuffer;
 	std::vector<std::array<int, 4>> FacesAsIndexesBuffer;
+	std::vector<Face3D> NewFaceBuffer;
 
 	switch (m_type)
 	{
@@ -175,44 +180,46 @@ int ColliderMaker::Run()
 	// WALL Method
 	case WALL:
 
-		// Verifications & Construction
+		// 'NewFaceBuffer' Construction & Verification
 		for (auto F : FaceBuffer)
+		{
+			for (int ii = 0;; ii)
+			{
+				if (F.pts.size() == 4)
+				{
+					NewFaceBuffer.push_back(F);
+					break;
+				}
+				else if (F.pts.size() < 4)
+					return 2;
+				else if (isLine({ F.pts[ii],
+					F.pts[(ii + 1) % F.pts.size()],
+					F.pts[(ii + 2) % F.pts.size()] }))
+				{
+					F.pts.erase(F.pts.begin() + ((ii + 1) % F.pts.size()));
+				}
+				else ii++;
+			}
 			if (F.pts.size() != 4)
 				return 2;
-		for (int ii = 0; ii < FaceBuffer.size(); ii++)
+		}
+
+
+		// Indexes Buffer Construction
+		for (int ii = 0; ii < NewFaceBuffer.size(); ii++)
 		{
 			FacesAsIndexesBuffer.push_back({});
 			for (int jj = 0; jj < 4; jj++)
-			{
-				IndexesBuffer.push_back(FaceBuffer[ii].pts[jj].Index);
-				FacesAsIndexesBuffer[ii][jj] = FaceBuffer[ii].pts[jj].Index;
-			}
-		}
-		unsigned int Count;
-		for (int ii = 0; ii < IndexesBuffer.size(); ii)
-		{
-			Count = 0;
-			for (int jj = 0; jj < IndexesBuffer.size(); jj)
-			{
-				if (IndexesBuffer[ii] == IndexesBuffer[jj])
-				{
-					Count++;
-					IndexesBuffer.erase(IndexesBuffer.begin() + jj);
-				}
-				else jj++;
-			}
-			if (Count != 3)
-				return 2;
-			IndexesBuffer.erase(IndexesBuffer.begin());
+				FacesAsIndexesBuffer[ii][jj] = NewFaceBuffer[ii].pts[jj].Index;
 		}
 
 		// Planes Verification
 		std::array<Point3D, 4> tPts;
-		for (int ii = 0; ii < FaceBuffer.size(); ii++)
+		for (int ii = 0; ii < NewFaceBuffer.size(); ii++)
 		{
 			for (int jj = 0; jj < 4; jj++)
-				tPts[jj] = FaceBuffer[ii].pts[jj];
-			if (!isPlaneQuad(tPts))
+				tPts[jj] = NewFaceBuffer[ii].pts[jj];
+			if (!isRectPlane(tPts))
 				return 2;
 		}
 
@@ -220,7 +227,7 @@ int ColliderMaker::Run()
 		fOutput << std::endl << std::endl;
 		for (int ii = 0; ii < FacesAsIndexesBuffer.size(); ii++)
 		{
-			fOutput << "c";
+			fOutput << std::endl << "c";
 			for (int jj = 0; jj < 3; jj++)
 				fOutput << " " << std::to_string(FacesAsIndexesBuffer[ii][jj]);
 		}
@@ -237,8 +244,32 @@ int ColliderMaker::Run()
 }
 
 
+// Verify that each Point3D are Aligned
+bool ColliderMaker::isLine(std::array<Point3D, 3> pts)
+{
+	Point3D A, B, C;
+	A = pts[0], B = pts[1], C = pts[2];
+	Point3D AB, AC;
+	AB.x = B.x - A.x; AB.y = B.y - A.y; AB.z = B.z - A.z;
+	AC.x = C.x - A.x; AC.y = C.y - A.y; AC.z = C.z - A.z;
+
+	float K;
+	if (AB.x)
+		K = AC.x / AB.x;
+	else if (AB.y)
+		K = AC.y / AB.y;
+	else if (AB.z)
+		K = AC.z / AB.z;
+	else
+		return true;
+
+	AB.x *= K; AB.y *= K; AB.z *= K;
+	return (AB.x == AC.x && AB.y == AC.y && AB.z == AC.z);
+}
+
+
 // Verify that each Point3D given are on same Plane
-bool ColliderMaker::isPlaneQuad(std::array<Point3D, 4> pts)
+bool ColliderMaker::isRectPlane(std::array<Point3D, 4> pts)
 {
 	Point3D A, B, C, D;
 	A = pts[0]; B = pts[1]; C = pts[2]; D = pts[3];

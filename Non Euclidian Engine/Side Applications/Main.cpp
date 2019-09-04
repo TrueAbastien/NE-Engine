@@ -2,7 +2,7 @@
 using namespace std;
 
 #define CURRENT_APP ColliderMaker
-#define PARAMS_AS "TestCrate.obj", ColliderMaker::ProcessingType::CUBE
+#define PARAMS_AS "Maze001.obj", ColliderMaker::ProcessingType::WALL
 
 #include <sstream>
 #include <iostream>

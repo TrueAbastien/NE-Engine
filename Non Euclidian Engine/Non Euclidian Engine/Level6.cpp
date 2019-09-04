@@ -2,7 +2,7 @@
 #include "Floorplan.h"
 
 void Level6::Load(PObjectVec& objs, PPortalVec& portals, Player& player) {
-  std::shared_ptr<Floorplan> floorplan(new Floorplan);
+	std::shared_ptr<Floorplan> floorplan(std::make_shared<Floorplan>());
   objs.push_back(floorplan);
   floorplan->AddPortals(portals);
 

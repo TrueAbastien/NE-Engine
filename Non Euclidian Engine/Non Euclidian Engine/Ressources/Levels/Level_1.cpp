@@ -4,14 +4,19 @@
 
 void Level_1::Load(PObjectVec & objs, PPortalVec & portals, Player & player)
 {
-	std::shared_ptr<Ground> ground(new Ground());
+	std::shared_ptr<Ground> ground(std::make_shared<Ground>());
 	ground->scale *= 1.2f;
 	objs.push_back(ground);
 
 	
-	std::shared_ptr<TestObj> obj(new TestObj("Crate_1.obj", 1.8f));
-	obj->pos += Vector3(5.0f, 0, 0);
-	objs.push_back(obj);
+	std::shared_ptr<TestObj> crate(std::make_shared<TestObj>("TestCrate.obj", 1.8f));
+	crate->pos += Vector3(5.0f, 0, 0);
+	objs.push_back(crate);
+	
+	std::shared_ptr<TestObj> maze(std::make_shared<TestObj>("TestMaze.obj", 2.0f, "Bush.bmp"));
+	maze->pos += Vector3(0, 0, 5.0f);
+	maze->euler += Vector3(4.71f, 0, 0);
+	objs.push_back(maze);
 	
 
 	/*

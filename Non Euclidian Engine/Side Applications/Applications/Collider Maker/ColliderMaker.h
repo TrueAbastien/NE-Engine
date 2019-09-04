@@ -23,7 +23,8 @@ public:
 
 private:
 
-	bool isPlaneQuad(std::array<Point3D, 4> pts);
+	bool isLine(std::array<Point3D, 3> pts);
+	bool isRectPlane(std::array<Point3D, 4> pts);
 
 	std::string m_path;
 	int m_type;
