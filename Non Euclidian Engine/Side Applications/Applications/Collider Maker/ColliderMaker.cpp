@@ -4,16 +4,17 @@
 #include <sstream>
 #include <array>
 
+#include <iostream>
 
 // Run Application
 int ColliderMaker::Run()
 {
 	// Process Opening // ----------
 	if (m_path.empty())
-		return -1;
+		return __LINE__;
 	std::ifstream fInput(this->m_path);
 	if (!fInput.is_open())
-		return -1;
+		return __LINE__;
 	std::ofstream fOutput(this->m_path, std::ios::app);
 
 
@@ -72,10 +73,12 @@ int ColliderMaker::Run()
 			case 2:
 				break;
 			default:
-				return 1;
+				return __LINE__;
 			}
 
 			// Append Vertex Indexes
+			line.push_back(' ');
+			line.push_back('0');
 			std::stringstream ss(line.c_str() + 2);
 			std::vector<int> iBuf;
 			int tVal;
@@ -83,12 +86,14 @@ int ColliderMaker::Run()
 			{
 				ss >> tVal;
 				if (aa > kCoeff)
-					if (tVal == iBuf[iBuf.size() - 1])
+					if (tVal == 0)
 						break;
 				if (aa % (kCoeff + 1) == 0)
 					iBuf.push_back(tVal);
 			}
-			iBuf.pop_back();
+
+			for (auto I : iBuf) std::cout << std::to_string(I) << " "; //DEBUG
+			std::cout << std::endl; //DEBUG
 
 			// Create Face
 			std::vector<Point3D> pts;
@@ -105,11 +110,11 @@ int ColliderMaker::Run()
 		// Error: Collisions are already Set
 		if (line.find("c ") == 0)
 		{
-			return 1;
+			return __LINE__;
 		}
 	}
 	if (PointBuffer.empty() || FaceBuffer.empty())
-		return 1;
+		return __LINE__;
 
 	
 	// Apply Collisions Methods // ----------
@@ -180,6 +185,8 @@ int ColliderMaker::Run()
 	// WALL Method
 	case WALL:
 
+		for (auto F : FaceBuffer) std::cout << F.pts.size() << std::endl; //DEBUG
+
 		// 'NewFaceBuffer' Construction & Verification
 		for (auto F : FaceBuffer)
 		{
@@ -191,7 +198,7 @@ int ColliderMaker::Run()
 					break;
 				}
 				else if (F.pts.size() < 4)
-					return 2;
+					return __LINE__;
 				else if (isLine({ F.pts[ii],
 					F.pts[(ii + 1) % F.pts.size()],
 					F.pts[(ii + 2) % F.pts.size()] }))
@@ -201,7 +208,7 @@ int ColliderMaker::Run()
 				else ii++;
 			}
 			if (F.pts.size() != 4)
-				return 2;
+				return __LINE__;
 		}
 
 
@@ -220,8 +227,18 @@ int ColliderMaker::Run()
 			for (int jj = 0; jj < 4; jj++)
 				tPts[jj] = NewFaceBuffer[ii].pts[jj];
 			if (!isRectPlane(tPts))
-				return 2;
+				return __LINE__;
 		}
+
+		// DEBUG //
+		for (auto F : FacesAsIndexesBuffer)
+		{
+			std::cout << std::endl;
+			for (auto I : F)
+				std::cout << std::to_string(I) << " ";
+		}
+		std::cout << std::endl << std::endl;
+		// ----- //
 
 		// Fill File
 		fOutput << std::endl << std::endl;

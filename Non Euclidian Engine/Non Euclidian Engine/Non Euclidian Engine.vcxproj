@@ -133,6 +133,7 @@
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="Entity.cpp" />
     <ClCompile Include="FrameBuffer.cpp" />
+    <ClCompile Include="FreeCamera.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="Level1.cpp" />
     <ClCompile Include="Level2.cpp" />
@@ -145,10 +146,12 @@
     <ClCompile Include="Object.cpp" />
     <ClCompile Include="Physical.cpp" />
     <ClCompile Include="Physics\BallPhysic.cpp" />
+    <ClCompile Include="Playable.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="Portal.cpp" />
     <ClCompile Include="Resources.cpp" />
     <ClCompile Include="Ressources\Levels\Level_1.cpp" />
+    <ClCompile Include="Ressources\Objects\MazeRoom\Maze.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="Texture.cpp" />
   </ItemGroup>
@@ -159,6 +162,7 @@
     <ClInclude Include="Entity.h" />
     <ClInclude Include="Floorplan.h" />
     <ClInclude Include="FrameBuffer.h" />
+    <ClInclude Include="FreeCamera.h" />
     <ClInclude Include="GameHeader.h" />
     <ClInclude Include="Ground.h" />
     <ClInclude Include="House.h" />
@@ -177,12 +181,15 @@
     <ClInclude Include="Physics\BallPhysic.h" />
     <ClInclude Include="Pillar.h" />
     <ClInclude Include="PillarRoom.h" />
+    <ClInclude Include="Playable.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="Portal.h" />
     <ClInclude Include="Resources.h" />
     <ClInclude Include="Ressources\Levels\Level_1.h" />
     <ClInclude Include="Ressources\Objects\Cat.h" />
     <ClInclude Include="Ressources\Objects\Church.h" />
+    <ClInclude Include="Ressources\Objects\MazeRoom\Maze.h" />
+    <ClInclude Include="Ressources\Objects\MazeRoom\MazeRoom.h" />
     <ClInclude Include="Ressources\Objects\Plant.h" />
     <ClInclude Include="Ressources\Objects\TestObj.h" />
     <ClInclude Include="Scene.h" />

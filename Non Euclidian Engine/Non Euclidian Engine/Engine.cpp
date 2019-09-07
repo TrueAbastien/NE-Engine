@@ -7,6 +7,7 @@
 #include "Level5.h"
 #include "Level6.h"
 #include <GL/wglew.h>
+#include <memory>
 #include <cmath>
 #include <iostream>
 #include <algorithm>
@@ -37,8 +38,9 @@ Engine::Engine() : hWnd(NULL), hDC(NULL), hRC(NULL) {
   InitGLObjects();
   SetupInputs();
 
-  player.reset(new Player);
+  player = std::make_shared<Player>();
   GH_PLAYER = player.get();
+  freeCamera = std::make_shared<FreeCamera>();
 
   vScenes.push_back(std::shared_ptr<Scene>(new Level_1));
   vScenes.push_back(std::shared_ptr<Scene>(new Level2(3)));
@@ -105,6 +107,23 @@ int Engine::Run() {
         LoadScene(6);
       }
 
+	  // Change Camera Focus
+	  if (input.key_press['C'])
+	  {
+		  switch (curFocus->Cast())
+		  {
+		  case 1: curFocus = freeCamera; break;
+		  case 2: curFocus = player; break;
+		  default: break;
+		  }
+	  }
+
+	  // Update Camera Position
+	  if (curFocus->Cast() == 1)
+	  {
+		  freeCamera->pos = player->pos;
+	  }
+
       //Used fixed time steps for updates
       const int64_t new_ticks = timer.GetTicks();
       for (int i = 0; cur_ticks < new_ticks && i < GH_MAX_STEPS; ++i) {
@@ -117,7 +136,7 @@ int Engine::Run() {
 
       //Setup camera for rendering
       const float n = GH_CLAMP(NearestPortalDist() * 0.5f, GH_NEAR_MIN, GH_NEAR_MAX);
-      main_cam.worldView = player->WorldToCam();
+      main_cam.worldView = curFocus->WorldToCam();
       main_cam.SetSize(iWidth, iHeight, n, GH_FAR);
       main_cam.UseViewport();
 
@@ -138,11 +157,14 @@ void Engine::LoadScene(int ix) {
   vObjects.clear();
   vPortals.clear();
   player->Reset();
+  freeCamera->Reset();
 
   //Create new scene
   curScene = vScenes[ix];
   curScene->Load(vObjects, vPortals, *player);
   vObjects.push_back(player);
+  vObjects.push_back(freeCamera);
+  curFocus = player;
 }
 
 void Engine::Update() {

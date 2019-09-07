@@ -1,8 +1,9 @@
 #pragma once
 #include "Vector.h"
 #include "Physical.h"
+#include "Playable.h"
 
-class Player : public Physical {
+class Player : public Physical, public Playable {
 public:
   Player();
   virtual ~Player() override {}
@@ -11,16 +12,15 @@ public:
   virtual void Update() override;
   virtual void OnCollide(Object& other, const Vector3& push) override;
 
-  void Look(float mouseDx, float mouseDy);
-  void Move(float moveF, float moveL);
+  virtual void Move(float moveF, float moveL) override;
 
-  Matrix4 WorldToCam() const;
-  Matrix4 CamToWorld() const;
-  Vector3 CamOffset() const;
+  virtual Matrix4 WorldToCam() const override;
+  virtual Matrix4 CamToWorld() const override;
+  virtual Vector3 CamOffset() const override;
+
+  virtual int Cast() const override { return 1; }
 
 private:
-  float cam_rx;
-  float cam_ry;
 
   float bob_mag;
   float bob_phi;

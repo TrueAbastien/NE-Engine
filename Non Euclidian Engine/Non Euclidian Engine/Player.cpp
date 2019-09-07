@@ -12,8 +12,7 @@ Player::Player() {
 
 void Player::Reset() {
   Physical::Reset();
-  cam_rx = 0.0f;
-  cam_ry = 0.0f;
+  Playable::Reset();
   bob_mag = 0.0f;
   bob_phi = 0.0f;
   friction = 0.04f;
@@ -38,25 +37,8 @@ void Player::Update() {
   //Physics
   Physical::Update();
 
-  //Looking
-  Look(GH_INPUT->mouse_dx, GH_INPUT->mouse_dy);
-
-  //Movement
-  float moveF = 0.0f;
-  float moveL = 0.0f;
-  if (GH_INPUT->key['Z']) {
-    moveF += 1.0f;
-  }
-  if (GH_INPUT->key['S']) {
-    moveF -= 1.0f;
-  }
-  if (GH_INPUT->key['Q']) {
-    moveL += 1.0f;
-  }
-  if (GH_INPUT->key['D']) {
-    moveL -= 1.0f;
-  }
-  Move(moveF, moveL);
+  //Playable
+  Playable::Update();
 
 #if 0
   //Jumping
@@ -67,43 +49,6 @@ void Player::Update() {
 
   //Reset ground state after update finishes
   onGround = false;
-}
-
-void Player::Look(float mouseDx, float mouseDy) {
-  //Adjust x-axis rotation
-  cam_rx -= mouseDy * GH_MOUSE_SENSITIVITY;
-  if (cam_rx > GH_PI / 2) {
-    cam_rx = GH_PI / 2;
-  } else if (cam_rx < -GH_PI / 2) {
-    cam_rx = -GH_PI / 2;
-  }
-
-  //Adjust y-axis rotation
-  cam_ry -= mouseDx * GH_MOUSE_SENSITIVITY;
-  if (cam_ry > GH_PI) {
-    cam_ry -= GH_PI * 2;
-  } else if (cam_ry < -GH_PI) {
-    cam_ry += GH_PI * 2;
-  }
-}
-
-void Player::Move(float moveF, float moveL) {
-  //Make sure movement is not too fast
-  const float mag = std::sqrt(moveF*moveF + moveL*moveL);
-  if (mag > 1.0f) {
-    moveF /= mag;
-    moveL /= mag;
-  }
-
-  //Movement
-  const Matrix4 camToWorld = LocalToWorld() * Matrix4::RotY(cam_ry);
-  velocity += camToWorld.MulDirection(Vector3(-moveL, 0, -moveF)) * (GH_WALK_ACCEL * GH_DT);
-
-  //Don't allow non-falling speeds above the player's max speed
-  const float tempY = velocity.y;
-  velocity.y = 0.0f;
-  velocity.ClipMag(p_scale * GH_WALK_SPEED);
-  velocity.y = tempY;
 }
 
 void Player::OnCollide(Object& other, const Vector3& push) {
@@ -124,6 +69,26 @@ void Player::OnCollide(Object& other, const Vector3& push) {
   //Base call
   Physical::OnCollide(other, newPush);
   friction = cur_friction;
+}
+
+void Player::Move(float moveF, float moveL)
+{
+	//Make sure movement is not too fast
+	const float mag = std::sqrt(moveF*moveF + moveL * moveL);
+	if (mag > 1.0f) {
+		moveF /= mag;
+		moveL /= mag;
+	}
+
+	//Movement
+	const Matrix4 camToWorld = LocalToWorld() * Matrix4::RotY(cam_ry);
+	velocity += camToWorld.MulDirection(Vector3(-moveL, 0, -moveF)) * (GH_WALK_ACCEL * GH_DT);
+
+	//Don't allow non-falling speeds above the player's max speed
+	const float tempY = velocity.y;
+	velocity.y = 0.0f;
+	velocity.ClipMag(p_scale * GH_WALK_SPEED);
+	velocity.y = tempY;
 }
 
 Matrix4 Player::WorldToCam() const {

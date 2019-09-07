@@ -76,7 +76,7 @@ Mesh::Mesh(const char* fname) {
           num_slashes++;
         }
       }
-	  std::cout << std::to_string(__countUp) + " " + std::to_string(num_slashes) << std::endl; //DEBUG
+	  //std::cout << std::to_string(__countUp) + " " + std::to_string(num_slashes) << std::endl; //DEBUG
       uint32_t a=0, b=0, c=0, d=0;
       uint32_t at=0, bt=0, ct=0, dt=0;
       uint32_t _tmp;
@@ -185,8 +185,8 @@ Mesh::Mesh(const char* fname) {
 	  }
   }
 
-  for (auto S : material_name_palette) std::cout << S << std::endl; //DEBUG
-  for (auto M : material_palette) M.Print(); //DEBUG
+  //for (auto S : material_name_palette) std::cout << S << std::endl; //DEBUG
+  //for (auto M : material_palette) M.Print(); //DEBUG
 
   std::vector<float> color = { 1.0f,1.0f,1.0f };
 

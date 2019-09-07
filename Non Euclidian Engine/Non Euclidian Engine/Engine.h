@@ -8,6 +8,7 @@
 #include "Timer.h"
 #include "Scene.h"
 #include "Sky.h"
+#include "FreeCamera.h"
 #include <GL/glew.h>
 #include <windows.h>
 #include <memory>
@@ -52,7 +53,10 @@ private:
   std::vector<std::shared_ptr<Object>> vObjects;
   std::vector<std::shared_ptr<Portal>> vPortals;
   std::shared_ptr<Sky> sky;
+
+  std::shared_ptr<FreeCamera> freeCamera;
   std::shared_ptr<Player> player;
+  std::shared_ptr<Playable> curFocus;
 
   GLint occlusionCullingSupported;
 
