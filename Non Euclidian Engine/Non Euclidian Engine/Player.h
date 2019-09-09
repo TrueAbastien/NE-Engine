@@ -3,6 +3,8 @@
 #include "Physical.h"
 #include "Playable.h"
 
+static const float PLAYER_RUNNING_MULTIPLIER = 1.7f;
+
 class Player : public Physical, public Playable {
 public:
   Player();

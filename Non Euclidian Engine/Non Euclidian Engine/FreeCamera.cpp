@@ -18,11 +18,10 @@ void FreeCamera::Update()
 		Velocity = Vector3(0.0f);
 
 	if (GH_INPUT->key[VK_SPACE])
-		Velocity.y = 1.0f;
+		Velocity.y = FREECAMERA_VERTICAL_VELOCITY;
 	else if (GH_INPUT->key[VK_SHIFT])
-		Velocity.y = -1.0f;
-	else
-		Velocity.y = 0.0f;
+		Velocity.y = -FREECAMERA_VERTICAL_VELOCITY;
+	else Velocity.y = 0.0f;
 
 	pos += Velocity * GH_DT * FREECAMERA_SPEED_MULTIPLIER;
 	Playable::Update();

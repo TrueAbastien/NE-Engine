@@ -1,9 +1,7 @@
 #include "Maze.h"
 #include "..\..\..\Ground.h"
 
-#ifdef _DEBUG
-	#include <iostream>
-#endif
+#include <iostream>
 
 #define F_DIR_X(D) -pow(D, 3)/3.0f + pow(D, 2)*2.0f - D*8.0f/3.0f
 #define F_DIR_Y(D) pow(D, 3)/3.0f - pow(D, 2) - D/3.0f + 1.0f
@@ -46,7 +44,7 @@ void MazeCase::set(int id, int R)
 
 
 // MazeCase: Set MazeRoom Properties to Match Composition
-void MazeCase::set(std::array<bool, 4> composition)
+void MazeCase::_set(std::array<bool, 4> composition)
 {
 	std::vector<std::array<int, 2>> Possibilities;
 	for (int ii = 0; ii < 5; ii++)
@@ -97,7 +95,7 @@ std::array<bool, 4> MazeCase::DecypherID() const
 	{
 		temp[ii] = tVal >= pow(2, ii);
 		if (temp[ii])
-			tVal -= pow(2, ii);
+			tVal -= (int)pow(2, ii);
 	}
 	for (int jj = 0; jj < 4; jj++)
 		res[jj] = temp[(jj - m_Ry + 4) % 4];
@@ -127,7 +125,7 @@ Maze::Maze(const unsigned int seed, int nS, int W, int H, int nJ)
 		{
 			Board[S].push_back({});
 			for (int X = 0; X < SectionWidth; X++)
-				Board[S][Y].push_back(std::make_shared<MazeCase>((int)std::rand() % 5 + 1, S, X, Y));
+				Board[S][Y].push_back(std::make_shared<MazeCase>(((int)std::rand() % 5) + 1, S, X, Y));
 		}
 	}
 
@@ -172,23 +170,23 @@ Maze::Maze(const unsigned int seed, int nS, int W, int H, int nJ)
 					IndexesInstance = PosInstance[tIndex];
 					PosInstance.erase(PosInstance.begin() + tIndex);
 
-					if ((X == 0 && RoomInstance->Right())
-						|| (Y == 0 && RoomInstance->Up())
-						|| (X == SectionWidth - 1 && RoomInstance->Left())
-						|| (Y == SectionHeight - 1 && RoomInstance->Down()))
+					if ((X == 0 && RoomInstance->Left())
+						|| (Y == 0 && RoomInstance->Down())
+						|| (X == SectionWidth - 1 && RoomInstance->Right())
+						|| (Y == SectionHeight - 1 && RoomInstance->Up()))
 					{
 						RoomInstance->set(IndexesInstance[0], IndexesInstance[1]);
 						continue;
 					}
 
 					if (X != 0)
-						if (Board[S][Y][X - 1]->Left() != RoomInstance->Right())
+						if (Board[S][Y][X - 1]->Right() != RoomInstance->Left())
 						{
 							RoomInstance->set(IndexesInstance[0], IndexesInstance[1]);
 							continue;
 						}
 					if (Y != 0)
-						if (Board[S][Y - 1][X]->Down() != RoomInstance->Up())
+						if (Board[S][Y - 1][X]->Up() != RoomInstance->Down())
 						{
 							RoomInstance->set(IndexesInstance[0], IndexesInstance[1]);
 							continue;
@@ -197,10 +195,24 @@ Maze::Maze(const unsigned int seed, int nS, int W, int H, int nJ)
 				}
 			}
 
+	/// DEBUG
+	for (int S = 0; S < Board.size(); S++)
+	{
+		std::cout << std::endl << "Section: " << S << std::endl;
+		for (int Y = 0; Y < Board[S].size(); Y++)
+		{
+			for (int X = 0; X < Board[S][Y].size(); X++)
+				std::cout << Board[S][Y][X]->get() << " ";
+			std::cout << std::endl;
+		}
+		std::cout << std::endl;
+	}
+
+	//*//
 	// Find and Count the Amount of Paths after Correction
 	// Then, Join Each Path as One
 	PMazeVec MazeInstance, CaseTreeInstance;
-	int tCount = 1;
+	int tCount;
 	std::vector<PMazeVec> AllPaths;
 	std::vector<std::array<std::pair<std::shared_ptr<MazeCase>, int>, 2>> AllNeighbors;
 	for (int S = 0; S < amountOfSection; S++)
@@ -209,7 +221,10 @@ Maze::Maze(const unsigned int seed, int nS, int W, int H, int nJ)
 		MazeInstance.clear();
 		for (int Y = 0; Y < SectionHeight; Y++)
 			for (int X = 0; X < SectionWidth; X++)
-				MazeInstance.push_back(Board[S][Y][X]);
+				if (Board[S][Y][X])
+					if (Board[S][Y][X]->get())
+						if (Board[S][Y][X]->get()->ID() != 0)
+							MazeInstance.push_back(Board[S][Y][X]);
 
 		// Loop while MazeInstance is not Empty
 		while (!MazeInstance.empty())
@@ -218,6 +233,7 @@ Maze::Maze(const unsigned int seed, int nS, int W, int H, int nJ)
 			CaseTreeInstance.clear();
 			CaseTreeInstance.push_back(MazeInstance[0]);
 			MazeInstance.erase(MazeInstance.begin());
+			tCount = 1;
 
 			// Loop while Path Finding is Viable
 			while (tCount != 0)
@@ -236,15 +252,16 @@ Maze::Maze(const unsigned int seed, int nS, int W, int H, int nJ)
 						if (NESW[D])
 
 							// Look for MazeCase Next to Instance in Specified Direction
-							for (int Index = 0; Index < MazeInstance.size(); Index++)
+							for (unsigned int Index = 0; Index < MazeInstance.size(); Index)
 							{
-								if (MazeInstance[Index]->X == Case->X + (int)F_DIR_X((float)D)
-									&& MazeInstance[Index]->Y == Case->Y + (int)F_DIR_Y((float)D))
+								if (MazeInstance[Index]->X == Case->X - int(F_DIR_X((float)D))
+									&& MazeInstance[Index]->Y == Case->Y - int(F_DIR_Y((float)D)))
 								{
 									CaseTreeInstance.push_back(MazeInstance[Index]);
 									MazeInstance.erase(MazeInstance.begin() + Index);
 									break;
 								}
+								else Index++;
 							}
 					}
 				}
@@ -253,13 +270,25 @@ Maze::Maze(const unsigned int seed, int nS, int W, int H, int nJ)
 					{
 						AllPaths.rbegin()->push_back(CaseTreeInstance[0]);
 						CaseTreeInstance.erase(CaseTreeInstance.begin());
+						std::cout << " " << S << " " << AllPaths.size() << " " << MazeInstance.size() << std::endl; //DEBUG
 					}
 			}
+
+			std::cout << "  " << S << " " << AllPaths.size() << " " << MazeInstance.size() << std::endl; //DEBUG
 		}
 
-		std::cout << AllPaths.size() << std::endl; ///DEBUG
+		/// DEBUG
+		std::cout << "NB Paths: " << AllPaths.size() << std::endl << std::endl;
+		for (auto P : AllPaths)
+		{
+			std::cout << P.size() << std::endl;
+			for (auto C : P)
+				std::cout << C->X << " " << C->Y << std::endl;
+			std::cout << std::endl;
+		}
 
-		// Determine if two Cases from Different Paths are Close to Each othe
+		/*/
+		// Determine if two Cases from Different Paths are Close to Each other
 		const int amountOfPath = AllPaths.size();
 		if (amountOfPath > 1)
 		{
@@ -273,9 +302,9 @@ Maze::Maze(const unsigned int seed, int nS, int W, int H, int nJ)
 
 		// Shuffle Vector of Neighbors Randomly
 		auto RandomNeighbors = AllNeighbors;
+		int tIndex;
 		if (amountOfPath > 1)
 		{
-			int tIndex;
 			RandomNeighbors.clear();
 			while (!AllNeighbors.empty())
 			{
@@ -286,15 +315,15 @@ Maze::Maze(const unsigned int seed, int nS, int W, int H, int nJ)
 		}
 
 		// Chose Pair of Cases to Join Paths
+		std::vector<int> AllPathIndexes;
+		int V1, V2;
 		if (amountOfPath > 1)
 		{
-			int V1, V2;
-			std::vector<int> AllPathIndexes;
 			for (int a = 0; a < amountOfPath; a++)
 				AllPathIndexes.push_back(a);
 
-			for (int ii = 0; ii < AllPathIndexes.size() - 1; ii++)
-				for (int jj = ii + 1; jj < AllPathIndexes.size(); jj++)
+			for (unsigned int ii = 0; ii < AllPathIndexes.size() - 1; ii++)
+				for (unsigned int jj = ii + 1; jj < AllPathIndexes.size(); jj++)
 				{
 					V1 = AllPathIndexes[ii];
 					V2 = AllPathIndexes[jj];
@@ -305,14 +334,14 @@ Maze::Maze(const unsigned int seed, int nS, int W, int H, int nJ)
 								|| (N[1].second == V1 && N[0].second == V2))
 							{
 								for (int Dir = 0; Dir < 4; Dir++)
-									if (N[0].first->X == N[1].first->X + F_DIR_X((float)Dir)
-										&& N[0].first->Y == N[1].first->Y + F_DIR_Y((float)Dir))
+									if (N[0].first->X == N[1].first->X + int(F_DIR_X((float)Dir))
+										&& N[0].first->Y == N[1].first->Y + int(F_DIR_Y((float)Dir)))
 									{
 										auto Boussole1 = N[0].first->NESW(), Boussole2 = N[1].first->NESW();
 										Boussole1[(Dir + 2) % 4] = true;
 										Boussole2[Dir] = true;
-										N[0].first->set(Boussole1);
-										N[1].first->set(Boussole2);
+										N[0].first->_set(Boussole1);
+										N[1].first->_set(Boussole2);
 										break;
 									}
 								AllPathIndexes.erase(AllPathIndexes.begin() + jj);
@@ -321,7 +350,9 @@ Maze::Maze(const unsigned int seed, int nS, int W, int H, int nJ)
 							}
 				}
 		}
+		//*/
 	}
+	//*/
 
 	// Create Portal Jonction between Sections
 	int nJonction = (nJ < nS ? (nJ < 2 ? (nS == 2 ? 1 : 2) : nJ) : nS - 1);

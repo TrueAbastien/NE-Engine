@@ -3,6 +3,7 @@
 #include "Vector.h"
 
 static const float FREECAMERA_SPEED_MULTIPLIER = 2.0f;
+static const float FREECAMERA_VERTICAL_VELOCITY = 1.5f;
 
 class FreeCamera : public Playable, public Object
 {

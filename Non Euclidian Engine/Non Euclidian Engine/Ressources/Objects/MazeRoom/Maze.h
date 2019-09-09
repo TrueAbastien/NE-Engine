@@ -6,10 +6,10 @@
 class MazeCase
 {
 public:
-	MazeCase(int Index = 0, int section = 0, int X = 0, int Y = 0);
+	MazeCase(int id = 0, int section = 0, int X = 0, int Y = 0);
 	std::shared_ptr<MazeRoom> get() const;
 	void set(int id, int R);
-	void set(std::array<bool, 4> composition);
+	void _set(std::array<bool, 4> composition);
 	void Rotate(int R);
 	void Translate(Vector3 T);
 
@@ -25,7 +25,7 @@ public:
 	void DebugPrint(int Id);
 
 private:
-	std::shared_ptr<MazeRoom> m_room = nullptr;
+	std::shared_ptr<MazeRoom> m_room;
 	Vector3 m_pos;
 	int m_Ry;
 

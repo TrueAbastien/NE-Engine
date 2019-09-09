@@ -46,6 +46,9 @@ private:
   LONG iHeight;        // window height
   bool isFullscreen;   // fullscreen state
 
+  bool shouldConfineCursor;
+  bool shouldDrawColliders;
+
   Camera main_cam;
   Input input;
   Timer timer;

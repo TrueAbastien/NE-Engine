@@ -28,7 +28,7 @@ void Player::Update() {
   if (bob_mag < GH_BOB_MIN) {
     bob_phi = 0.0f;
   } else {
-    bob_phi += GH_BOB_FREQ * GH_DT;
+	  bob_phi += GH_BOB_FREQ * GH_DT;
     if (bob_phi > 2 * GH_PI) {
       bob_phi -= 2 * GH_PI;
     }
@@ -41,11 +41,17 @@ void Player::Update() {
   Playable::Update();
 
 #if 0
+  //Running
+  if (GH_INPUT->key[VK_SHIFT]) {
+	  velocity.x *= PLAYER_RUNNING_MULTIPLIER;
+	  velocity.z *= PLAYER_RUNNING_MULTIPLIER;
+  }
+#endif
+
   //Jumping
   if (onGround && GH_INPUT->key[VK_SPACE]) {
     velocity.y += 2.0f * p_scale;
   }
-#endif
 
   //Reset ground state after update finishes
   onGround = false;

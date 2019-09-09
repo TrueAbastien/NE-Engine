@@ -33,6 +33,9 @@ Engine::Engine() : hWnd(NULL), hDC(NULL), hRC(NULL) {
   GH_INPUT = &input;
   isFullscreen = false;
 
+  shouldConfineCursor = true;
+  shouldDrawColliders = false;
+
   SetProcessDPIAware();
   CreateGLWindow();
   InitGLObjects();
@@ -89,7 +92,8 @@ int Engine::Run() {
       }
     } else {
       //Confine the cursor
-      ConfineCursor();
+		if (shouldConfineCursor)
+			ConfineCursor();
 
       if (input.key_press['1']) {
         LoadScene(0);
@@ -123,6 +127,12 @@ int Engine::Run() {
 	  {
 		  freeCamera->pos = player->pos;
 	  }
+
+	  // Switches
+	  if (input.key_press['P'])
+		  shouldConfineCursor = !shouldConfineCursor;
+	  if (input.key_press['O'])
+		  shouldDrawColliders = !shouldDrawColliders;
 
       //Used fixed time steps for updates
       const int64_t new_ticks = timer.GetTicks();
@@ -287,9 +297,9 @@ void Engine::Render(const Camera& cam, GLuint curFBO, const Portal* skipPortal) 
   
 #if _DEBUG
   //Debug draw colliders
-  for (size_t i = 0; i < vObjects.size(); ++i) {
-    vObjects[i]->DebugDraw(cam);
-  }
+  if (shouldDrawColliders)
+	  for (size_t i = 0; i < vObjects.size(); ++i)
+		  vObjects[i]->DebugDraw(cam);
 #endif
 }
 

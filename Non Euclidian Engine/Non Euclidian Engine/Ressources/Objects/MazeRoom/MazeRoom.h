@@ -22,7 +22,7 @@ public:
 		euler += Vector3(3 * GH_PI / 2, 0, 0);
 	}
 	virtual ~MazeRoom_1() {}
-	int ID() const override { return 1; }
+	int ID() const override { return 4; }
 };
 
 // Maze Room 2
@@ -38,7 +38,7 @@ public:
 		euler += Vector3(3 * GH_PI / 2, 0, 0);
 	}
 	virtual ~MazeRoom_2() {}
-	int ID() const override { return 6; }
+	int ID() const override { return 9; }
 };
 
 // Maze Room 3
@@ -70,7 +70,7 @@ public:
 		euler += Vector3(3 * GH_PI / 2, 0, 0);
 	}
 	virtual ~MazeRoom_4() {}
-	int ID() const override { return 7; }
+	int ID() const override { return 13; }
 };
 
 // Maze Room 5
