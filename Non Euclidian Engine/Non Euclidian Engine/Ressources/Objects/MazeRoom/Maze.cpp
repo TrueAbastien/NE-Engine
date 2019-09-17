@@ -9,7 +9,7 @@
 
 // MazeCase: Create Maze
 MazeCase::MazeCase(int Index, int section, int x, int y)
-	: Section(section), X(x), Y(y)
+	: Section(section), X(x), Y(y), m_room(std::make_shared<MazeRoom_0>())
 {
 	this->set(Index, 0);
 	m_pos = m_room->pos;
@@ -20,7 +20,6 @@ MazeCase::MazeCase(int Index, int section, int x, int y)
 std::shared_ptr<MazeRoom> MazeCase::get() const
 {
 	m_room->euler.y = float(m_Ry) * GH_PI / 2;
-	//std::cout << m_room->euler.y << std::endl; //DEBUG
 	m_room->pos = m_pos;
 	return m_room;
 }
@@ -36,7 +35,7 @@ void MazeCase::set(int id, int R)
 	case 3: m_room = std::make_shared<MazeRoom_3>(); break;
 	case 4: m_room = std::make_shared<MazeRoom_4>(); break;
 	case 5: m_room = std::make_shared<MazeRoom_5>(); break;
-	default: m_room = std::make_shared<MazeRoom>(); break;
+	default: m_room = std::make_shared<MazeRoom_0>(); break;
 	}
 	m_Ry = 0;
 	this->Rotate(R);
@@ -93,14 +92,12 @@ std::array<bool, 4> MazeCase::DecypherID() const
 	std::array<bool, 4> temp, res;
 	for (int ii = 3; ii >= 0; ii--)
 	{
-		temp[ii] = tVal >= pow(2, ii);
-		if (temp[ii])
+		temp[3 - ii] = tVal >= pow(2, ii);
+		if (temp[3 - ii])
 			tVal -= (int)pow(2, ii);
 	}
 	for (int jj = 0; jj < 4; jj++)
-		res[jj] = temp[(jj - m_Ry + 4) % 4];
-
-	//std::cout << std::endl; for (auto V : res) std::cout << V << " "; //DEBUG
+		res[jj] = temp[(jj + m_Ry) % 4];
 
 	return res;
 }
@@ -133,21 +130,22 @@ Maze::Maze(const unsigned int seed, int nS, int W, int H, int nJ)
 	std::vector<std::array<int, 2>> Possibilities;
 	std::vector<std::array<int, 2>> PosInstance;
 	for (int ii = 0; ii < 5; ii++)
-		for (int jj = 0; jj < 4; jj++)
-			Possibilities.push_back({ ii + 1, jj });
-
-	/// DEBUG ///
-	/*//
-	MazeCase Inst;
-	for (auto P : Possibilities)
 	{
-		Inst.set(P[0], P[1]);
-		Inst.DebugPrint(P[0]);
-		for (int ii = 0; ii < 4; ii++)
-			std::cout << Inst.NESW()[ii] << " ";
+		switch (ii + 1)
+		{
+		case 3:
+			for (int jj = 0; jj < 2; jj++)
+				Possibilities.push_back({ ii + 1, jj * 2 });
+			break;
+		case 5:
+			Possibilities.push_back({ ii + 1, 0 });
+			break;
+		default:
+			for (int jj = 0; jj < 4; jj++)
+				Possibilities.push_back({ ii + 1, jj });
+			break;
+		}
 	}
-	std::cout << std::endl;
-	//*/
 
 	// Ensure Validity of Each Cases in Maze
 	std::shared_ptr<MazeCase> RoomInstance;
@@ -171,9 +169,9 @@ Maze::Maze(const unsigned int seed, int nS, int W, int H, int nJ)
 					PosInstance.erase(PosInstance.begin() + tIndex);
 
 					if ((X == 0 && RoomInstance->Left())
-						|| (Y == 0 && RoomInstance->Down())
+						|| (Y == 0 && RoomInstance->Up())
 						|| (X == SectionWidth - 1 && RoomInstance->Right())
-						|| (Y == SectionHeight - 1 && RoomInstance->Up()))
+						|| (Y == SectionHeight - 1 && RoomInstance->Down()))
 					{
 						RoomInstance->set(IndexesInstance[0], IndexesInstance[1]);
 						continue;
@@ -186,7 +184,7 @@ Maze::Maze(const unsigned int seed, int nS, int W, int H, int nJ)
 							continue;
 						}
 					if (Y != 0)
-						if (Board[S][Y - 1][X]->Up() != RoomInstance->Down())
+						if (Board[S][Y - 1][X]->Down() != RoomInstance->Up())
 						{
 							RoomInstance->set(IndexesInstance[0], IndexesInstance[1]);
 							continue;
@@ -195,24 +193,10 @@ Maze::Maze(const unsigned int seed, int nS, int W, int H, int nJ)
 				}
 			}
 
-	/// DEBUG
-	for (int S = 0; S < Board.size(); S++)
-	{
-		std::cout << std::endl << "Section: " << S << std::endl;
-		for (int Y = 0; Y < Board[S].size(); Y++)
-		{
-			for (int X = 0; X < Board[S][Y].size(); X++)
-				std::cout << Board[S][Y][X]->get() << " ";
-			std::cout << std::endl;
-		}
-		std::cout << std::endl;
-	}
-
-	//*//
 	// Find and Count the Amount of Paths after Correction
 	// Then, Join Each Path as One
 	PMazeVec MazeInstance, CaseTreeInstance;
-	int tCount;
+	int tSize;
 	std::vector<PMazeVec> AllPaths;
 	std::vector<std::array<std::pair<std::shared_ptr<MazeCase>, int>, 2>> AllNeighbors;
 	for (int S = 0; S < amountOfSection; S++)
@@ -223,8 +207,7 @@ Maze::Maze(const unsigned int seed, int nS, int W, int H, int nJ)
 			for (int X = 0; X < SectionWidth; X++)
 				if (Board[S][Y][X])
 					if (Board[S][Y][X]->get())
-						if (Board[S][Y][X]->get()->ID() != 0)
-							MazeInstance.push_back(Board[S][Y][X]);
+						MazeInstance.push_back(Board[S][Y][X]);
 
 		// Loop while MazeInstance is not Empty
 		while (!MazeInstance.empty())
@@ -233,61 +216,51 @@ Maze::Maze(const unsigned int seed, int nS, int W, int H, int nJ)
 			CaseTreeInstance.clear();
 			CaseTreeInstance.push_back(MazeInstance[0]);
 			MazeInstance.erase(MazeInstance.begin());
-			tCount = 1;
 
 			// Loop while Path Finding is Viable
-			while (tCount != 0)
+			while (!CaseTreeInstance.empty())
 			{
-				tCount = 0;
+				tSize = CaseTreeInstance.size();
 
 				// Read Each MazeCase in Tree
-				for (auto Case : CaseTreeInstance)
+				for (unsigned int ii = 0; ii < CaseTreeInstance.size(); ii++)
 				{
-					tCount++;
-					auto NESW = Case->NESW();
 
-					// Read Each Direction
-					for (int D = 0; D < 4; D++)
+					// Look for MazeCase Next to Instance in Specified Direction
+					for (unsigned int Index = 0; Index < MazeInstance.size(); Index)
 					{
-						if (NESW[D])
-
-							// Look for MazeCase Next to Instance in Specified Direction
-							for (unsigned int Index = 0; Index < MazeInstance.size(); Index)
-							{
-								if (MazeInstance[Index]->X == Case->X - int(F_DIR_X((float)D))
-									&& MazeInstance[Index]->Y == Case->Y - int(F_DIR_Y((float)D)))
-								{
-									CaseTreeInstance.push_back(MazeInstance[Index]);
-									MazeInstance.erase(MazeInstance.begin() + Index);
-									break;
-								}
-								else Index++;
-							}
+						// Top
+						if ((CaseTreeInstance[ii]->X == MazeInstance[Index]->X
+							&& CaseTreeInstance[ii]->Y == MazeInstance[Index]->Y + 1
+							&& CaseTreeInstance[ii]->Up()) ||
+						// Right
+							(CaseTreeInstance[ii]->X == MazeInstance[Index]->X - 1
+							&& CaseTreeInstance[ii]->Y == MazeInstance[Index]->Y
+							&& CaseTreeInstance[ii]->Right()) ||
+						// Bottom
+							(CaseTreeInstance[ii]->X == MazeInstance[Index]->X
+							&& CaseTreeInstance[ii]->Y == MazeInstance[Index]->Y - 1
+							&& CaseTreeInstance[ii]->Down()) ||
+						// Left
+							(CaseTreeInstance[ii]->X == MazeInstance[Index]->X + 1
+							&& CaseTreeInstance[ii]->Y == MazeInstance[Index]->Y
+							&& CaseTreeInstance[ii]->Left()))
+						{
+							CaseTreeInstance.push_back(MazeInstance[Index]);
+							MazeInstance.erase(MazeInstance.begin() + Index);
+						}
+						else Index++;
 					}
 				}
-				if (tCount != 0)
-					for (int Range = 0; Range < tCount; Range++)
+				if (tSize != 0)
+					for (int Range = 0; Range < tSize; Range++)
 					{
 						AllPaths.rbegin()->push_back(CaseTreeInstance[0]);
 						CaseTreeInstance.erase(CaseTreeInstance.begin());
-						std::cout << " " << S << " " << AllPaths.size() << " " << MazeInstance.size() << std::endl; //DEBUG
 					}
 			}
-
-			std::cout << "  " << S << " " << AllPaths.size() << " " << MazeInstance.size() << std::endl; //DEBUG
 		}
 
-		/// DEBUG
-		std::cout << "NB Paths: " << AllPaths.size() << std::endl << std::endl;
-		for (auto P : AllPaths)
-		{
-			std::cout << P.size() << std::endl;
-			for (auto C : P)
-				std::cout << C->X << " " << C->Y << std::endl;
-			std::cout << std::endl;
-		}
-
-		/*/
 		// Determine if two Cases from Different Paths are Close to Each other
 		const int amountOfPath = AllPaths.size();
 		if (amountOfPath > 1)
@@ -315,55 +288,252 @@ Maze::Maze(const unsigned int seed, int nS, int W, int H, int nJ)
 		}
 
 		// Chose Pair of Cases to Join Paths
-		std::vector<int> AllPathIndexes;
-		int V1, V2;
+		std::vector<std::vector<int>> AllPathIndexes;
+		std::vector<int> V1, V2;
+		bool hasBeenJoining;
 		if (amountOfPath > 1)
 		{
 			for (int a = 0; a < amountOfPath; a++)
-				AllPathIndexes.push_back(a);
+				AllPathIndexes.push_back({ a });
 
 			for (unsigned int ii = 0; ii < AllPathIndexes.size() - 1; ii++)
-				for (unsigned int jj = ii + 1; jj < AllPathIndexes.size(); jj++)
+				for (unsigned int jj = ii + 1; jj < AllPathIndexes.size(); jj)
 				{
 					V1 = AllPathIndexes[ii];
 					V2 = AllPathIndexes[jj];
 
 					if (V1 != V2)
+					{
+						hasBeenJoining = false;
+
 						for (auto N : RandomNeighbors)
-							if ((N[0].second == V1 && N[1].second == V2)
-								|| (N[1].second == V1 && N[0].second == V2))
+							if ((Contain(V1, N[0].second) && Contain(V2, N[1].second))
+								|| (Contain(V1, N[1].second) && Contain(V2, N[0].second)))
 							{
-								for (int Dir = 0; Dir < 4; Dir++)
-									if (N[0].first->X == N[1].first->X + int(F_DIR_X((float)Dir))
-										&& N[0].first->Y == N[1].first->Y + int(F_DIR_Y((float)Dir)))
-									{
-										auto Boussole1 = N[0].first->NESW(), Boussole2 = N[1].first->NESW();
-										Boussole1[(Dir + 2) % 4] = true;
-										Boussole2[Dir] = true;
-										N[0].first->_set(Boussole1);
-										N[1].first->_set(Boussole2);
-										break;
-									}
-								AllPathIndexes.erase(AllPathIndexes.begin() + jj);
-								jj--;
-								break;
+								auto Boussole1 = N[0].first->NESW(), Boussole2 = N[1].first->NESW();
+
+								// Top
+								if (N[0].first->X == N[1].first->X
+									&& N[0].first->Y == N[1].first->Y + 1)
+								{
+									hasBeenJoining = true;
+									Boussole1[0] = true;
+									Boussole2[2] = true;
+									N[0].first->_set(Boussole1);
+									N[1].first->_set(Boussole2);
+									break;
+								}
+								// Right
+								else if (N[0].first->X == N[1].first->X - 1
+									&& N[0].first->Y == N[1].first->Y)
+								{
+									hasBeenJoining = true;
+									Boussole1[1] = true;
+									Boussole2[3] = true;
+									N[0].first->_set(Boussole1);
+									N[1].first->_set(Boussole2);
+									break;
+								}
+								// Bottom
+								else if (N[0].first->X == N[1].first->X
+									&& N[0].first->Y == N[1].first->Y - 1)
+								{
+									hasBeenJoining = true;
+									Boussole1[2] = true;
+									Boussole2[0] = true;
+									N[0].first->_set(Boussole1);
+									N[1].first->_set(Boussole2);
+									break;
+								}
+								// Left
+								else if (N[0].first->X == N[1].first->X + 1
+									&& N[0].first->Y == N[1].first->Y)
+								{
+									hasBeenJoining = true;
+									Boussole1[3] = true;
+									Boussole2[1] = true;
+									N[0].first->_set(Boussole1);
+									N[1].first->_set(Boussole2);
+									break;
+								}
 							}
+						if (hasBeenJoining)
+						{
+							for (unsigned int b = 0; b < AllPathIndexes[jj].size(); b++)
+								AllPathIndexes[jj - 1].push_back(AllPathIndexes[jj][b]);
+							AllPathIndexes.erase(AllPathIndexes.begin() + jj);
+						}
+						else jj++;
+					}
 				}
 		}
-		//*/
+	}
+
+	// Rough Empty Cases Correction
+	PMazeVec tAllCases;
+	std::array<bool, 4> CorrectionFiller;
+	for (int S = 0; S < amountOfSection; S++)
+	{
+		tAllCases.clear();
+		for (auto vC : Board[S])
+			for (auto C : vC)
+				tAllCases.push_back(C);
+		for (unsigned int ii = 0; ii < tAllCases.size(); ii++)
+		{
+			if (tAllCases[ii]->get()->ID() == 0)
+			{
+				for (int a = 0; a < 4; a++)
+					CorrectionFiller[a] = false;
+				for (int jj : NeighbourIndexes(tAllCases, tAllCases[ii], false))
+				{
+					// Top
+					if (tAllCases[ii]->X == tAllCases[jj]->X
+						&& tAllCases[ii]->Y == tAllCases[jj]->Y + 1
+						&& tAllCases[jj]->Down())
+					{
+						CorrectionFiller[0] = true;
+					}
+					// Right
+					else if (tAllCases[ii]->X == tAllCases[jj]->X - 1
+						&& tAllCases[ii]->Y == tAllCases[jj]->Y
+						&& tAllCases[jj]->Left())
+					{
+						CorrectionFiller[1] = true;
+					}
+					// Bottom
+					else if (tAllCases[ii]->X == tAllCases[jj]->X
+						&& tAllCases[ii]->Y == tAllCases[jj]->Y - 1
+						&& tAllCases[jj]->Up())
+					{
+						CorrectionFiller[2] = true;
+					}
+					// Left
+					else if (tAllCases[ii]->X == tAllCases[jj]->X + 1
+						&& tAllCases[ii]->Y == tAllCases[jj]->Y
+						&& tAllCases[jj]->Right())
+					{
+						CorrectionFiller[3] = true;
+					}
+				}
+				tAllCases[ii]->_set(CorrectionFiller);
+			}
+		}
+	}
+	/// TODO
+
+	//*//
+	// Create Portal Jonction between Sections
+	int nJonction = GH_MIN<int>(GH_MIN<int>(SectionHeight, SectionWidth) - 1, (nJ < nS ? (nJ < 2 ? (nS == 2 ? 1 : 2) : nJ) : nS - 1));
+	std::cout << "Amount of Jonction: " << nJonction << std::endl; //DEBUG
+
+	std::vector<std::array<int, 2>> ExistingJonctionPos;
+	PMazePortalVec MazePortalCases;
+	std::shared_ptr<MazeCase> tCaseInstance;
+	int tACIndex, tEraseCount;
+	std::vector<int> tEraseIndexes;
+	for (int S = 0; S < amountOfSection; S++)
+	{
+		tAllCases.clear();
+		for (auto vC : Board[S])
+			for (auto C : vC)
+				tAllCases.push_back(C);
+		for (int ii = 0; ii < nJonction; ii)
+		{
+			std::cout << "Section: " << S << " | Remaining Cases: " << tAllCases.size() << std::endl; //DEBUG
+			tACIndex = std::rand() % tAllCases.size();
+			tCaseInstance = tAllCases[tACIndex];
+			tAllCases.erase(tAllCases.begin() + tACIndex);
+
+			for (auto Jp : ExistingJonctionPos)
+				if ((Jp[0] == tCaseInstance->X) || (Jp[1] == tCaseInstance->Y))
+					continue;
+
+			// Top
+			if (tCaseInstance->Up())
+				MazePortalCases.push_back(std::make_shared<MazePortal>(tCaseInstance, MazePortal::TOP, SectionWidth));
+			// Right
+			else if (tCaseInstance->Right())
+				MazePortalCases.push_back(std::make_shared<MazePortal>(tCaseInstance, MazePortal::RIGHT, SectionWidth));
+			// Bottom
+			else if (tCaseInstance->Down())
+				MazePortalCases.push_back(std::make_shared<MazePortal>(tCaseInstance, MazePortal::BOTTOM, SectionWidth));
+			// Left
+			else if (tCaseInstance->Left())
+				MazePortalCases.push_back(std::make_shared<MazePortal>(tCaseInstance, MazePortal::LEFT, SectionWidth));
+			else continue;
+			
+			tEraseCount = 0;
+			tEraseIndexes = NeighbourIndexes(tAllCases, tCaseInstance);
+			for (auto V : tEraseIndexes) std::cout << V << " "; std::cout << std::endl; //DEBUG
+			for (unsigned int jj = 0; jj < tEraseIndexes.size(); jj++)
+			{
+				tAllCases.erase(tAllCases.begin() + (tEraseIndexes[jj] - tEraseCount));
+				tEraseCount++;
+			}
+			ii++;
+		}
 	}
 	//*/
 
-	// Create Portal Jonction between Sections
-	int nJonction = (nJ < nS ? (nJ < 2 ? (nS == 2 ? 1 : 2) : nJ) : nS - 1);
-	/// TODO
+	//*//
+	// Connect Portals
+	std::vector<int> IndPortalIndexes;
+	bool shouldSkip;
+	for (unsigned int kk = 0; kk < MazePortalCases.size(); kk++)
+		IndPortalIndexes.push_back(kk);
+	for (int S = 0; S < amountOfSection - 1; S++)
+	{
+		shouldSkip = false;
+		for (unsigned int ii = 0; ii < MazePortalCases.size(); ii++)
+		{
+			for (unsigned int jj = 0; jj < MazePortalCases.size(); jj++)
+				if (ii != jj)
+					if (MazePortalCases[ii]->GetSection() == S && MazePortalCases[jj]->GetSection() == S + 1)
+						if (Contain(IndPortalIndexes, ii) && Contain(IndPortalIndexes, jj))
+						{
+							auto
+								P1 = MazePortalCases[ii]->get(),
+								P2 = MazePortalCases[jj]->get();
+							Portal::Connect(P1, P2);
+							IndPortalIndexes[ii] = -1; IndPortalIndexes[jj] = -1;
+							shouldSkip = true;
+							break;
+						}
+			if (shouldSkip)
+				break;
+		}
+	}
+	for (unsigned int kk = 0; kk < IndPortalIndexes.size(); kk)
+	{
+		if (IndPortalIndexes[kk] == -1)
+			IndPortalIndexes.erase(IndPortalIndexes.begin() + kk);
+		else kk++;
+	}
+	int tPEraseI1, tPEraseI2;
+	while (!IndPortalIndexes.empty())
+	{
+		if (IndPortalIndexes.size() == 1)
+			break;
+		tPEraseI1 = std::rand() % IndPortalIndexes.size();
+		tPEraseI2 = std::rand() % IndPortalIndexes.size();
+		if (tPEraseI1 == tPEraseI2)
+			continue;
+		auto
+			P1 = MazePortalCases[IndPortalIndexes[tPEraseI1]]->get(),
+			P2 = MazePortalCases[IndPortalIndexes[tPEraseI2]]->get();
+		Portal::Connect(P1, P2);
+		IndPortalIndexes.erase(IndPortalIndexes.begin() + tPEraseI1);
+		IndPortalIndexes.erase(IndPortalIndexes.begin() + (GH_MAX<int>(tPEraseI2 - 1, 0)));
+	}
+	//*/
 
 	// Set Content Members
 	for (int S = 0; S < nS; S++)
 		for (int Y = 0; Y < H; Y++)
 			for (int X = 0; X < W; X++)
-				if (Board[S][Y][X]->get()->ID() != 0)
-					m_Rooms.push_back(Board[S][Y][X]);
+				m_Rooms.push_back(Board[S][Y][X]);
+	for (int INDEX = 0; INDEX < MazePortalCases.size(); INDEX++)
+		m_Portals.push_back(MazePortalCases[INDEX]->get());
 }
 
 
@@ -375,7 +545,7 @@ void Maze::Apply(PObjectVec & Objects, PPortalVec & Portals)
 	{
 		auto Floor = std::make_shared<Ground>();
 		Floor->scale = Vector3(SectionWidth * 2.5f, 1.0f, SectionHeight * 2.5f);
-		Floor->pos += Vector3((SectionWidth + 1) * ii * 5.0f + (SectionWidth - 1) * 2.5f, 0, (SectionWidth - 1) * 2.5f);
+		Floor->pos += Vector3((SectionWidth + 1) * ii * 5.0f + (SectionWidth - 1) * 2.5f, 0, (SectionHeight - 1) * 2.5f);
 		Objects.push_back(Floor);
 	}
 
@@ -388,5 +558,74 @@ void Maze::Apply(PObjectVec & Objects, PPortalVec & Portals)
 	}
 
 	// Push Portals
-	/// TODO
+	for (auto P : m_Portals)
+	{
+		Portals.push_back(P);
+	}
+}
+
+
+// Maze: Verify that Value is Contained in Ref
+bool Maze::Contain(std::vector<int> ref, int value)
+{
+	for (auto I : ref)
+		if (I == value)
+			return true;
+	return false;
+}
+
+
+// Maze: Return Indexes of Each Neighbours in Content
+std::vector<int> Maze::NeighbourIndexes(PMazeVec Content, std::shared_ptr<MazeCase> Instance, bool checkIfOpened)
+{
+	std::vector<int> res;
+	for (unsigned int ii = 0; ii < Content.size(); ii++)
+	{
+		// Top
+		if (((Instance->X == Content[ii]->X)
+			&& (Instance->Y == Content[ii]->Y + 1)
+			&& (checkIfOpened ? Instance->Up() : true))
+		// Right
+			|| ((Instance->X == Content[ii]->X - 1)
+				&& (Instance->Y == Content[ii]->Y)
+				&& (checkIfOpened ? Instance->Right() : true))
+		// Bottom
+			|| ((Instance->X == Content[ii]->X)
+				&& (Instance->Y == Content[ii]->Y - 1)
+				&& (checkIfOpened ? Instance->Down() : true))
+		// Left
+			|| ((Instance->X == Content[ii]->X + 1)
+				&& (Instance->Y == Content[ii]->Y)
+				&& (checkIfOpened ? Instance->Up() : true)))
+		{
+			res.push_back((int)ii);
+		}
+	}
+	return res;
+}
+
+
+// ---------- ---------- ---------- ---------- ---------- //
+
+
+// MazePortal: Constructor
+MazePortal::MazePortal(std::shared_ptr<MazeCase> ref, DIRECTION dir, int sectionWidth)
+	: m_Content(std::make_shared<Portal>())
+	, m_Parent(ref)
+	, m_Direction((TYPE)((int)dir % 2))
+{
+	switch (dir)
+	{
+	case 0: m_LocalOffset = Vector3(0, 2.5f, -2.5f); break;
+	case 1: m_LocalOffset = Vector3(-2.5f, 2.5f, 0); break;
+	case 2: m_LocalOffset = Vector3(0, 2.5f, 2.5f); break;
+	case 3: m_LocalOffset = Vector3(2.5f, 2.5f, 0); break;
+	default: break;
+	}
+	m_Content->euler = Vector3(0, float(m_Direction) * GH_PI / 2.0f, 0);
+	m_Content->scale = Vector3(1.25f, 2.5f, 1.25f);
+	m_Content->pos =
+		m_LocalOffset // Local Offset Member
+		+ Vector3(5.0f * m_Parent->X, 0, 5.0f * m_Parent->Y) // Case Offset
+		+ Vector3(GetSection() * 5.0f * (sectionWidth + 1), 0, 0); // Section Offset
 }

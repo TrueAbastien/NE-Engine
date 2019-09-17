@@ -5,7 +5,7 @@
 
 void Level_1::Load(PObjectVec & objs, PPortalVec & portals, Player & player)
 {
-	Maze M(1);
+	Maze M;
 	M.Apply(objs, portals);
 
 
@@ -14,12 +14,15 @@ void Level_1::Load(PObjectVec & objs, PPortalVec & portals, Player & player)
 	ground->scale *= 1.2f;
 	objs.push_back(ground);
 
-	std::array<MazeCase, 5> Cases;
-	for (int ii = 0; ii < 5; ii++)
+	MazeCase Case(5);
+	objs.push_back(Case.get());
+
+	PPortalVec PPV;
+	for (int ii = 0; ii < 4; ii++)
 	{
-		Cases[ii] = MazeCase(ii + 1);
-		Cases[ii].Translate(Vector3(ii*5.0f, 0, 0));
-		objs.push_back(Cases[ii].get());
+		PPV.push_back(std::make_shared<Portal>());
+		Case.SetPortal(PPV[ii], ii);
+		portals.push_back(PPV[ii]);
 	}
 	//*/
 

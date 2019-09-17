@@ -6,7 +6,23 @@
 class MazeRoom : public Object
 {
 public:
-	virtual int ID() const { return 0; }
+	virtual int ID() const = 0;
+};
+
+// Maze Room 0
+class MazeRoom_0 : public MazeRoom
+{
+public:
+	MazeRoom_0()
+	{
+		mesh = AquireMesh("MazeRoom/Maze000.obj");
+		shader = AquireShader("texture");
+		texture = AquireTexture("Bush.bmp");
+		scale = Vector3(2.5f);
+		euler += Vector3(3 * GH_PI / 2, 0, 0);
+	}
+	virtual ~MazeRoom_0() {}
+	int ID() const override { return 0; }
 };
 
 // Maze Room 1
@@ -22,7 +38,7 @@ public:
 		euler += Vector3(3 * GH_PI / 2, 0, 0);
 	}
 	virtual ~MazeRoom_1() {}
-	int ID() const override { return 4; }
+	int ID() const override { return 8; }
 };
 
 // Maze Room 2
@@ -38,7 +54,7 @@ public:
 		euler += Vector3(3 * GH_PI / 2, 0, 0);
 	}
 	virtual ~MazeRoom_2() {}
-	int ID() const override { return 9; }
+	int ID() const override { return 3; }
 };
 
 // Maze Room 3
@@ -54,7 +70,7 @@ public:
 		euler += Vector3(3 * GH_PI / 2, 0, 0);
 	}
 	virtual ~MazeRoom_3() {}
-	int ID() const override { return 5; }
+	int ID() const override { return 10; }
 };
 
 // Maze Room 4
@@ -70,7 +86,7 @@ public:
 		euler += Vector3(3 * GH_PI / 2, 0, 0);
 	}
 	virtual ~MazeRoom_4() {}
-	int ID() const override { return 13; }
+	int ID() const override { return 11; }
 };
 
 // Maze Room 5
